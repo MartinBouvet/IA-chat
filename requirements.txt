@@ -1,0 +1,17 @@
+# Core dependencies - Compatible Mac Apple Silicon
+ultralytics==8.3.0
+numpy==1.26.4
+opencv-python==4.10.0.84
+pillow==10.4.0
+matplotlib==3.9.2
+scikit-learn==1.5.2
+
+# Progress bar
+tqdm==4.66.5
+
+# For data augmentation
+imgaug==0.4.0
+
+# Optional but useful
+pandas==2.2.3
+seaborn==0.13.2
