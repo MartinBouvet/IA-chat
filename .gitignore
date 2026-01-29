@@ -5,4 +5,12 @@ __pycache__/
 runs/
 .idea/
 .vscode/
+
+# Ignore large media files
+*.mov
+*.mp4
+*.avi
+
+# Ignore base models (downloaded automatically)
 yolov8n.pt
+yolov8n-cls.pt
