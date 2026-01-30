@@ -7,7 +7,7 @@ from ultralytics import YOLO
 
 # --- CONFIGURATION ---
 DETECTOR_MODEL_NAME = 'yolov8n.pt'
-IDENTIFIER_MODEL_PATH = 'runs/classify/yolo_cat_classifier/weights/best.pt' # Vérifie ce chemin !
+IDENTIFIER_MODEL_PATH = 'runs/models/tintin.pt' # Vérifie ce chemin !
 
 # Flux Vidéo (Ton URL RTSP via MediaMTX)
 STREAM_URL = 'rtsp://192.168.137.54:8554/cam1'

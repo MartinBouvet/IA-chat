@@ -2,15 +2,28 @@ venv/
 __pycache__/
 *.pyc
 .DS_Store
-runs/
 .idea/
 .vscode/
+
+# Ignore Training Data & Logs
+data/
+legacy/
+runs/
+temp*
+models/
+deploy/
 
 # Ignore large media files
 *.mov
 *.mp4
 *.avi
+*.jpg
+*.png
 
 # Ignore base models (downloaded automatically)
 yolov8n.pt
 yolov8n-cls.pt
+
+# EXCEPTION: Keep the custom trained models!
+!runs/models/tintin.pt
+!runs/models/chat2.pt

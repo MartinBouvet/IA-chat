@@ -1,10 +1,8 @@
 """
-Script DRI : Détection, Reconnaissance, Identification (Final)
-==============================================================
-Logique :
-1. YOLOv8 Nano détecte tout le monde.
-2. Si HUMAIN -> On affiche juste (Pas d'identification).
-3. Si CHAT / CHIEN / PELUCHE -> On envoie au modèle Custom pour Identification.
+Script DRI VISUEL pour CHAT 2 (La nouvelle peluche)
+===================================================
+Similaire à dri_demo.py mais configuré pour détecter 'chat2'.
+Affiche une fenêtre vidéo pour vérifier que ça marche.
 """
 
 import cv2
@@ -14,19 +12,18 @@ import threading
 from ultralytics import YOLO
 
 # --- CONFIGURATION ---
-DETECTOR_MODEL_NAME = 'yolov8n.pt' 
-IDENTIFIER_MODEL_PATH = 'runs/models/tintin.pt'
+DETECTOR_MODEL_NAME = 'yolov8n.pt'
+IDENTIFIER_MODEL_PATH = 'runs/models/chat2.pt'
 
-# Flux Vidéo (RTSP avec TCP forcé)
+# Flux Vidéo
 STREAM_URL = 'rtsp://192.168.137.54:8554/cam1'
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp"
 
-# Classes d'intérêt
-TARGET_CLASSES_FOR_ID = [15, 16, 77] # 15:Cat, 16:Dog, 77:Teddy Bear
-HUMAN_CLASS = 0 # 0:Person
+# Paramètres
+TARGET_CLASSES_FOR_ID = [15, 16, 77] # Chat, Chien, Teddy
+HUMAN_CLASS = 0
 
 class ThreadedCamera:
-    """Lecture vidéo optimisée sans latence"""
     def __init__(self, src=0):
         self.capture = cv2.VideoCapture(src)
         self.capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
@@ -56,9 +53,8 @@ class ThreadedCamera:
         return self.status, self.frame
 
 def main():
-    print("🤖 Lancement DRI (Detection -> Identification)...")
+    print("🤖 [VISUEL - CHAT 2] Démarrage...")
     
-    # 1. Chargement
     try:
         detector = YOLO(DETECTOR_MODEL_NAME)
         identifier = YOLO(IDENTIFIER_MODEL_PATH)
@@ -66,16 +62,15 @@ def main():
         print(f"❌ Erreur: {e}")
         return
 
-    # 2. Connexion
     print(f"📡 Connexion: {STREAM_URL}")
     cam = ThreadedCamera(STREAM_URL)
     time.sleep(2.0)
 
     if not cam.status:
-        print("❌ Echec connexion vidéo.")
+        print("❌ Echec vidéo.")
         return
 
-    print("✅ Prêt ! 'q' pour quitter.")
+    print("✅ Fenêtre ouverte ! Appuyez sur 'q' pour quitter.")
 
     while True:
         ret, frame = cam.get_frame()
@@ -83,48 +78,38 @@ def main():
             time.sleep(0.1)
             continue
 
-        # --- ETAPE 1 : DÉTECTION (YOLOv8n) ---
-        # On détecte tout avec un seuil assez bas
         results = detector(frame, verbose=False, conf=0.4)[0]
 
         for box in results.boxes:
             cls_id = int(box.cls[0])
-            conf_det = float(box.conf[0])
             x1, y1, x2, y2 = map(int, box.xyxy[0])
             
-            # Gestion des HUMAINS
+            # --- HUMAIN ---
             if cls_id == HUMAN_CLASS:
-                label = f"Humain {conf_det:.0%}"
-                color = (255, 100, 0) # Bleu
-                cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-                cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 100, 0), 2)
+                cv2.putText(frame, "Humain", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 100, 0), 2)
 
-            # Gestion des ANIMAUX / PELUCHES
+            # --- ANIMAL / PELUCHE ---
             elif cls_id in TARGET_CLASSES_FOR_ID:
-                # C'est un candidat -> On passe à l'étape 2 (Identification)
-                
-                # Crop (Découpage)
                 h, w = frame.shape[:2]
-                pad = 10
-                crop = frame[max(0,y1-pad):min(h,y2+pad), max(0,x1-pad):min(w,x2+pad)]
+                crop = frame[max(0,y1-10):min(h,y2+10), max(0,x1-10):min(w,x2+10)]
 
                 if crop.size > 0:
                     try:
-                        # --- ETAPE 2 : IDENTIFICATION (Custom Model) ---
                         id_res = identifier(crop, verbose=False)[0]
                         top1_idx = id_res.probs.top1
                         id_name = id_res.names[top1_idx]
                         id_conf = id_res.probs.top1conf.item()
 
-                        # Décision Finale
-                        if id_name == 'target_cat' and id_conf > 0.6:
-                            label = f"CIBLE ({id_conf:.0%})"
-                            color = (0, 255, 0) # Vert
-                        elif id_name == 'target_cat':
-                            label = f"Cible ? ({id_conf:.0%})"
-                            color = (0, 165, 255) # Orange
+                        # Gestion des couleurs et labels
+                        if id_name == 'chat2' and id_conf > 0.6:
+                            label = f"NOUVEAU CHAT ({id_conf:.0%})"
+                            color = (0, 255, 0) # Vert (C'est lui !)
+                        elif id_name == 'target_cat' and id_conf > 0.6:
+                            label = f"TinTin ({id_conf:.0%})"
+                            color = (0, 255, 255) # Jaune (C'est l'ancien)
                         else:
-                            label = f"Non ({id_conf:.0%})"
+                            label = f"Inconnu ({id_conf:.0%})"
                             color = (0, 0, 255) # Rouge
 
                         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
@@ -133,7 +118,7 @@ def main():
                     except Exception:
                         pass
 
-        cv2.imshow('DRI Final', frame)
+        cv2.imshow('Detection Chat 2', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
