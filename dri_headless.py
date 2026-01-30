@@ -126,7 +126,7 @@ def main():
 
                         # Résultat Identification
                         if id_name == 'target_cat' and id_conf > SEUIL_CONF_ID:
-                            print(f"🎯 [IDENTIFICATION] >>> CIBLE CONFIRMÉE ! <<< ({id_conf:.1%})")
+                            print(f"✅ CIBLE IDENTIFIÉE : C'est bien TinTin le chat ! ({id_conf:.1%})")
                             # ICI : Tu pourras ajouter plus tard l'ouverture de la trappe
                             # Ex: requests.get('http://ip-raspberry/ouvrir-trappe')
                         
